@@ -4,64 +4,710 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CRM Overview Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f1f4f9;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --border: #e2e8f0;
+    --accent: #2563eb;
+    --accent2: #4f46e5;
+    --accent3: #059669;
+    --accent4: #d97706;
+    --danger: #dc2626;
+    --text: #1e293b;
+    --muted: #64748b;
+    --muted2: #94a3b8;
+  }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 24px 32px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .header-title h1 {
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .header-title p {
+    color: var(--muted2);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--accent3);
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--accent3);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  /* FILTERS */
+  .filters-wrap {
+    margin: 20px 32px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 130px;
+  }
+
+  .filter-group label {
+    font-size: 11px;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+
+  .filter-group select,
+  .filter-group input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .filter-group select:focus,
+  .filter-group input:focus {
+    border-color: var(--accent);
+  }
+
+  .filter-group input[type="date"] {
+    color-scheme: light;
+  }
+
+  .date-range-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .date-range-group label {
+    font-size: 11px;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+
+  .date-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .date-tab {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted2);
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 7px 11px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .date-tab:hover { border-color: var(--accent); color: var(--text); }
+  .date-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .custom-dates {
+    display: none;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .custom-dates.visible { display: flex; }
+
+  .custom-dates span { color: var(--muted); font-size: 12px; }
+
+  .apply-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    color: #fff;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 7px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    align-self: flex-end;
+    transition: opacity 0.2s;
+    margin-left: auto;
+  }
+
+  .apply-btn:hover { opacity: 0.88; }
+
+  /* PRESET BAR */
+  .preset-bar {
+    margin: 16px 32px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .preset-label {
+    font-size: 11px;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .preset-select-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 260px;
+    min-width: 160px;
+  }
+
+  .preset-select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 7px 32px 7px 10px;
+    border-radius: 7px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .preset-select:focus { border-color: var(--accent); }
+
+  .preset-select-arrow {
+    position: absolute;
+    right: 10px; top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--muted2);
+    font-size: 10px;
+  }
+
+  .preset-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 13px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+  }
+
+  .preset-btn-save {
+    background: var(--surface);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .preset-btn-save:hover { background: var(--accent); color: #fff; }
+
+  .preset-btn-delete {
+    background: var(--surface);
+    color: var(--danger);
+    border-color: #fecaca;
+    display: none;
+  }
+
+  .preset-btn-delete:hover { background: #fef2f2; }
+  .preset-btn-delete.visible { display: flex; }
+
+  .preset-btn-default {
+    background: var(--surface);
+    color: var(--accent4);
+    border-color: #fde68a;
+    display: none;
+  }
+
+  .preset-btn-default:hover { background: #fffbeb; }
+  .preset-btn-default.visible { display: flex; }
+  .preset-btn-default.is-default { background: #fffbeb; border-color: var(--accent4); }
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.4);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.visible { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    width: 360px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal h3 {
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .modal p {
+    font-size: 12px;
+    color: var(--muted2);
+    margin-bottom: 18px;
+  }
+
+  .modal-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    outline: none;
+    margin-bottom: 18px;
+    transition: border-color 0.2s;
+  }
+
+  .modal-input:focus { border-color: var(--accent); }
+
+  .modal-summary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .modal-summary strong { color: var(--text); }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .modal-cancel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .modal-cancel:hover { border-color: var(--muted); color: var(--text); }
+
+  .modal-confirm {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    color: #fff;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .modal-confirm:hover { opacity: 0.88; }
+  .filters-wrap {
+    margin: 20px 32px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    padding: 14px 20px;
+  }
+
+  /* UNFILTERED INDICATOR on cards */
+  .unfiltered-tag {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-weight: 600;
+    color: var(--muted2);
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+
+  .unfiltered-tag.visible { display: flex; }
+
+  .unfiltered-tag svg {
+    width: 10px; height: 10px;
+    flex-shrink: 0;
+  }
+  .dashboard {
+    padding: 20px 32px 32px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: auto;
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.4s ease both;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-title {
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* STAT ROWS */
+  .stat-row-1 {
+    padding: 20px 32px 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .stat-row-2 {
+    padding: 16px 32px 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100px;
+    animation: fadeIn 0.4s ease both;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  .stat-value {
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text);
+    margin-top: 4px;
+  }
+
+  .stat-sub {
+    font-size: 12px;
+    color: var(--muted2);
+    margin-top: 6px;
+  }
+
+  .stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-top: 8px;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+  }
+
+  .stat-badge.up { background: rgba(16,185,129,0.12); color: var(--accent3); }
+  .stat-badge.down { background: rgba(239,68,68,0.12); color: var(--danger); }
+  .stat-badge.warn { background: rgba(245,158,11,0.12); color: var(--accent4); }
+
+  .accent-line {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  /* CHART CARDS */
+  .chart-sales { grid-column: span 8; }
+  .chart-pipeline { grid-column: span 4; }
+  .chart-top5 { grid-column: span 5; }
+  .chart-quotes { grid-column: span 3; }
+  .chart-accounts { grid-column: span 4; }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+  }
+
+  /* TOP 5 TABLE */
+  .top5-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+  }
+
+  .top5-table th {
+    text-align: left;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--muted);
+    padding: 0 0 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .top5-table th:last-child { text-align: right; }
+
+  .top5-table td {
+    padding: 10px 0;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(30,39,64,0.5);
+    vertical-align: middle;
+  }
+
+  .top5-table tr:last-child td { border-bottom: none; }
+
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; height: 20px;
+    background: var(--surface2);
+    border-radius: 5px;
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted2);
+    margin-right: 8px;
+  }
+
+  .rank-badge.gold { background: rgba(245,158,11,0.15); color: var(--accent4); }
+  .rank-badge.silver { background: rgba(148,163,184,0.12); color: #94a3b8; }
+  .rank-badge.bronze { background: rgba(180,83,9,0.12); color: #c2773a; }
+
+  .revenue-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .revenue-bar {
+    flex: 1;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .revenue-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .revenue-val {
+    font-family: 'Calibri', 'Calibri Light', 'Gill Sans', 'Trebuchet MS', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 1100px) {
+    .stat-row-1 { grid-template-columns: repeat(2, 1fr); }
+    .stat-row-2 { grid-template-columns: repeat(3, 1fr); }
+    .chart-sales { grid-column: span 12; }
+    .chart-pipeline { grid-column: span 12; }
+    .chart-top5 { grid-column: span 6; }
+    .chart-quotes { grid-column: span 6; }
+    .chart-accounts { grid-column: span 12; }
+  }
+
+  @media (max-width: 700px) {
+    .header, .filters-wrap, .stat-row-1, .stat-row-2, .dashboard { padding-left: 16px; padding-right: 16px; }
+    .stat-row-1 { grid-template-columns: repeat(2, 1fr); }
+    .stat-row-2 { grid-template-columns: repeat(1, 1fr); }
+    .chart-top5 { grid-column: span 12; }
+    .chart-quotes { grid-column: span 12; }
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
 </head>
-<body style='font-family:"DM Sans", sans-serif; background:#f1f4f9; color:#1e293b; min-height:100vh; font-size:14px; line-height:1.5'>
+<body>
 
 <!-- HEADER -->
-<div class="header" style="padding:24px 32px 0; display:flex; align-items:flex-start; justify-content:space-between; gap:24px">
+<div class="header">
   <div class="header-title">
-    <h1 style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:26px; font-weight:800; letter-spacing:-0.5px; color:#1e293b'>CRM Overview</h1>
-    <p style="color:#94a3b8; font-size:13px; margin-top:2px">Sales performance &amp; pipeline metrics</p>
+    <h1>CRM Overview</h1>
+    <p>Sales performance & pipeline metrics</p>
   </div>
-  <div class="live-badge" style='display:flex; align-items:center; gap:6px; font-size:12px; color:#059669; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; letter-spacing:0.5px; text-transform:uppercase'><div class="live-dot" style="width:7px; height:7px; background:#059669; border-radius:50%; animation:pulse 2s infinite"></div> Live Data</div>
+  <div class="live-badge"><div class="live-dot"></div> Live Data</div>
 </div>
 
 <!-- PRESET BAR -->
-<div class="preset-bar" style="margin:16px 32px 0; display:flex; align-items:center; gap:10px; flex-wrap:wrap">
-  <span class="preset-label" style='font-size:11px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; white-space:nowrap'>Saved Reports</span>
-  <div class="preset-select-wrap" style="position:relative; flex:1; max-width:260px; min-width:160px">
-    <select class="preset-select" id="preset-select" onchange="loadPreset()" style='width:100%; background:#ffffff; border:1px solid #e2e8f0; color:#1e293b; font-family:"DM Sans", sans-serif; font-size:13px; padding:7px 32px 7px 10px; border-radius:7px; outline:none; cursor:pointer; transition:border-color 0.2s; -webkit-appearance:none; appearance:none; box-shadow:0 1px 3px rgba(0, 0, 0, 0.05)' width="100%">
+<div class="preset-bar">
+  <span class="preset-label">Saved Reports</span>
+  <div class="preset-select-wrap">
+    <select class="preset-select" id="preset-select" onchange="loadPreset()">
       <option value="">— Select a saved report —</option>
     </select>
-    <span class="preset-select-arrow" style="position:absolute; right:10px; top:50%; transform:translatey(-50%); pointer-events:none; color:#94a3b8; font-size:10px">▼</span>
+    <span class="preset-select-arrow">▼</span>
   </div>
-  <button class="preset-btn preset-btn-save" onclick="openSaveModal()" style='display:flex; align-items:center; gap:5px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; padding:7px 13px; border-radius:7px; cursor:pointer; transition:all 0.15s; white-space:nowrap; border:1px solid #e2e8f0; background:#ffffff; color:#2563eb; border-color:#2563eb'>
-    <svg width="12" height="12" viewbox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2H5L2 5v9h12V2z"></path><rect x="5" y="9" width="6" height="5"></rect><rect x="5" y="2" width="5" height="4"></rect></svg>
+  <button class="preset-btn preset-btn-save" onclick="openSaveModal()">
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2H5L2 5v9h12V2z"/><rect x="5" y="9" width="6" height="5"/><rect x="5" y="2" width="5" height="4"/></svg>
     Save Report
   </button>
-  <button class="preset-btn preset-btn-default" id="preset-default-btn" onclick="toggleDefault()" style='display:none; align-items:center; gap:5px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; padding:7px 13px; border-radius:7px; cursor:pointer; transition:all 0.15s; white-space:nowrap; border:1px solid #e2e8f0; background:#ffffff; color:#d97706; border-color:#fde68a'>
-    <svg width="12" height="12" id="default-star-icon" viewbox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="8,1 10,6 15,6 11,9 13,14 8,11 3,14 5,9 1,6 6,6"></polygon></svg>
+  <button class="preset-btn preset-btn-default" id="preset-default-btn" onclick="toggleDefault()">
+    <svg width="12" height="12" id="default-star-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="8,1 10,6 15,6 11,9 13,14 8,11 3,14 5,9 1,6 6,6"/></svg>
     <span id="default-btn-label">Set as Default</span>
   </button>
-  <button class="preset-btn preset-btn-delete" id="preset-delete-btn" onclick="deletePreset()" style='display:none; align-items:center; gap:5px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; padding:7px 13px; border-radius:7px; cursor:pointer; transition:all 0.15s; white-space:nowrap; border:1px solid #e2e8f0; background:#ffffff; color:#dc2626; border-color:#fecaca'>
-    <svg width="12" height="12" viewbox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,4 13,4"></polyline><path d="M5 4V2h6v2"></path><path d="M6 7v5M10 7v5"></path><rect x="3" y="4" width="10" height="10" rx="1"></rect></svg>
+  <button class="preset-btn preset-btn-delete" id="preset-delete-btn" onclick="deletePreset()">
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,4 13,4"/><path d="M5 4V2h6v2"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>
     Delete
   </button>
 </div>
 
 <!-- SAVE MODAL -->
-<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnOverlay(event)" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.4); z-index:100; align-items:center; justify-content:center">
-  <div class="modal" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:28px; width:360px; box-shadow:0 20px 60px rgba(0, 0, 0, 0.15); animation:fadeIn 0.2s ease">
-    <h3 style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:16px; font-weight:700; color:#1e293b; margin-bottom:6px'>Save Report</h3>
-    <p style="font-size:12px; color:#94a3b8; margin-bottom:18px">Give this filter combination a name so you can load it quickly later.</p>
-    <input class="modal-input" id="preset-name-input" type="text" placeholder="e.g. Sydney — Alice Johnson" maxlength="60" style='width:100%; background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; font-family:"DM Sans", sans-serif; font-size:14px; padding:9px 12px; border-radius:8px; outline:none; margin-bottom:18px; transition:border-color 0.2s' width="100%">
-    <div class="modal-summary" id="modal-summary" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:20px; font-size:12px; color:#64748b; line-height:1.7"></div>
-    <div class="modal-actions" style="display:flex; gap:8px; justify-content:flex-end">
-      <button class="modal-cancel" onclick="closeSaveModal()" style='background:#f8fafc; border:1px solid #e2e8f0; color:#64748b; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; padding:8px 16px; border-radius:7px; cursor:pointer; transition:all 0.15s'>Cancel</button>
-      <button class="modal-confirm" onclick="confirmSavePreset()" style='background:linear-gradient(135deg, #2563eb, #4f46e5); border:none; color:#fff; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; padding:8px 18px; border-radius:7px; cursor:pointer; transition:opacity 0.2s'>Save Report</button>
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <h3>Save Report</h3>
+    <p>Give this filter combination a name so you can load it quickly later.</p>
+    <input class="modal-input" id="preset-name-input" type="text" placeholder="e.g. Sydney — Alice Johnson" maxlength="60" />
+    <div class="modal-summary" id="modal-summary"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeSaveModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmSavePreset()">Save Report</button>
     </div>
   </div>
 </div>
 
 <!-- FILTERS -->
-<div class="filters-wrap" style="margin:20px 32px 0; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); overflow:hidden">
-  <div class="filter-row" style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; padding:14px 20px">
-    <div class="filter-group" style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:130px">
-      <label style='font-size:11px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b'>Branch</label>
-      <select id="f-branch" style='background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; font-family:"DM Sans", sans-serif; font-size:13px; padding:7px 10px; border-radius:7px; outline:none; cursor:pointer; transition:border-color 0.2s; -webkit-appearance:none; appearance:none'>
+<div class="filters-wrap">
+  <div class="filter-row">
+    <div class="filter-group">
+      <label>Branch</label>
+      <select id="f-branch">
         <option>All Branches</option>
         <option>Sydney CBD</option>
         <option>Melbourne</option>
@@ -69,9 +715,9 @@
         <option>Perth</option>
       </select>
     </div>
-    <div class="filter-group" style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:130px">
-      <label style='font-size:11px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b'>Salesperson</label>
-      <select id="f-sales" style='background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; font-family:"DM Sans", sans-serif; font-size:13px; padding:7px 10px; border-radius:7px; outline:none; cursor:pointer; transition:border-color 0.2s; -webkit-appearance:none; appearance:none'>
+    <div class="filter-group">
+      <label>Salesperson</label>
+      <select id="f-sales">
         <option>All Salespeople</option>
         <option>Alice Johnson</option>
         <option>Ben Carter</option>
@@ -79,9 +725,9 @@
         <option>David Lee</option>
       </select>
     </div>
-    <div class="filter-group" style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:130px">
-      <label style='font-size:11px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b'>User</label>
-      <select id="f-user" onchange="onUserFilterChange()" style='background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; font-family:"DM Sans", sans-serif; font-size:13px; padding:7px 10px; border-radius:7px; outline:none; cursor:pointer; transition:border-color 0.2s; -webkit-appearance:none; appearance:none'>
+    <div class="filter-group">
+      <label>User</label>
+      <select id="f-user" onchange="onUserFilterChange()">
         <option value="">All Users</option>
         <option>Alice Johnson</option>
         <option>Ben Carter</option>
@@ -91,9 +737,9 @@
         <option>Frank Thomas</option>
       </select>
     </div>
-    <div class="filter-group" style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:130px">
-      <label style='font-size:11px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b'>Area</label>
-      <select id="f-area" style='background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; font-family:"DM Sans", sans-serif; font-size:13px; padding:7px 10px; border-radius:7px; outline:none; cursor:pointer; transition:border-color 0.2s; -webkit-appearance:none; appearance:none'>
+    <div class="filter-group">
+      <label>Area</label>
+      <select id="f-area">
         <option>All Areas</option>
         <option>North</option>
         <option>South</option>
@@ -101,9 +747,9 @@
         <option>West</option>
       </select>
     </div>
-    <div class="filter-group" style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:130px">
-      <label style='font-size:11px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b'>Account Type</label>
-      <select id="f-type" style='background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; font-family:"DM Sans", sans-serif; font-size:13px; padding:7px 10px; border-radius:7px; outline:none; cursor:pointer; transition:border-color 0.2s; -webkit-appearance:none; appearance:none'>
+    <div class="filter-group">
+      <label>Account Type</label>
+      <select id="f-type">
         <option>All Types</option>
         <option>Enterprise</option>
         <option>SMB</option>
@@ -111,9 +757,9 @@
         <option>Non-Profit</option>
       </select>
     </div>
-    <div class="filter-group" style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:130px">
-      <label style='font-size:11px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b'>Account Category</label>
-      <select id="f-cat" style='background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; font-family:"DM Sans", sans-serif; font-size:13px; padding:7px 10px; border-radius:7px; outline:none; cursor:pointer; transition:border-color 0.2s; -webkit-appearance:none; appearance:none'>
+    <div class="filter-group">
+      <label>Account Category</label>
+      <select id="f-cat">
         <option>All Categories</option>
         <option>Prospect</option>
         <option>Active</option>
@@ -121,102 +767,102 @@
         <option>Partner</option>
       </select>
     </div>
-    <div class="filter-group" style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:130px">
-      <label style='font-size:11px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b'>Record Type</label>
-      <select id="f-rectype" style='background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; font-family:"DM Sans", sans-serif; font-size:13px; padding:7px 10px; border-radius:7px; outline:none; cursor:pointer; transition:border-color 0.2s; -webkit-appearance:none; appearance:none'>
+    <div class="filter-group">
+      <label>Record Type</label>
+      <select id="f-rectype">
         <option value="all">Accounts &amp; Customers</option>
         <option value="customer">Customers Only</option>
         <option value="account">Accounts Only</option>
       </select>
     </div>
-    <div class="date-range-group" style="display:flex; flex-direction:column; gap:4px">
-      <label style='font-size:11px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b'>Date Range</label>
+    <div class="date-range-group">
+      <label>Date Range</label>
       <div>
-        <div class="date-tabs" style="display:flex; gap:4px">
-          <button class="date-tab active" data-range="month" onclick="setDateRange(this, 'month')" style='background:#2563eb; border:1px solid #e2e8f0; color:#fff; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:11px; font-weight:600; padding:7px 11px; border-radius:7px; cursor:pointer; transition:all 0.15s; white-space:nowrap; border-color:#2563eb'>This Month</button>
-          <button class="date-tab" data-range="quarter" onclick="setDateRange(this, 'quarter')" style='background:#f8fafc; border:1px solid #e2e8f0; color:#94a3b8; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:11px; font-weight:600; padding:7px 11px; border-radius:7px; cursor:pointer; transition:all 0.15s; white-space:nowrap'>This Quarter</button>
-          <button class="date-tab" data-range="year" onclick="setDateRange(this, 'year')" style='background:#f8fafc; border:1px solid #e2e8f0; color:#94a3b8; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:11px; font-weight:600; padding:7px 11px; border-radius:7px; cursor:pointer; transition:all 0.15s; white-space:nowrap'>This Year</button>
-          <button class="date-tab" data-range="custom" onclick="setDateRange(this, 'custom')" style='background:#f8fafc; border:1px solid #e2e8f0; color:#94a3b8; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:11px; font-weight:600; padding:7px 11px; border-radius:7px; cursor:pointer; transition:all 0.15s; white-space:nowrap'>Custom</button>
+        <div class="date-tabs">
+          <button class="date-tab active" data-range="month" onclick="setDateRange(this, 'month')">This Month</button>
+          <button class="date-tab" data-range="quarter" onclick="setDateRange(this, 'quarter')">This Quarter</button>
+          <button class="date-tab" data-range="year" onclick="setDateRange(this, 'year')">This Year</button>
+          <button class="date-tab" data-range="custom" onclick="setDateRange(this, 'custom')">Custom</button>
         </div>
-        <div class="custom-dates" id="custom-dates" style="display:none; gap:6px; align-items:center; flex-wrap:wrap">
+        <div class="custom-dates" id="custom-dates">
           <input type="date" id="date-from" style="margin-top:6px">
-          <span style="color:#64748b; font-size:12px">→</span>
+          <span>→</span>
           <input type="date" id="date-to" style="margin-top:6px">
         </div>
       </div>
     </div>
-    <button class="apply-btn" onclick="applyFilters()" style='background:linear-gradient(135deg, #2563eb, #4f46e5); border:none; color:#fff; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; padding:8px 18px; border-radius:7px; cursor:pointer; letter-spacing:0.3px; align-self:flex-end; transition:opacity 0.2s; margin-left:auto'>Apply Filters</button>
+    <button class="apply-btn" onclick="applyFilters()">Apply Filters</button>
   </div>
 </div>
 
 <!-- STAT ROW 1: Task metrics -->
-<div class="stat-row-1" style="padding:20px 32px 0; display:grid; grid-template-columns:repeat(4, 1fr); gap:16px">
+<div class="stat-row-1">
 
-  <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; min-height:100px; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); animation-delay:0.05s">
-    <div class="card-title" id="title-outstanding" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Outstanding Tasks</div>
-    <div class="stat-value" id="stat-outstanding" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:36px; font-weight:800; color:#1e293b; margin-top:4px'>47</div>
-    <div class="stat-sub" style="font-size:12px; color:#94a3b8; margin-top:6px">Open &amp; in progress</div>
-    <span class="stat-badge" id="badge-outstanding" style='display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; margin-top:8px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif'>—</span>
-    <div class="accent-line" style="position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 12px 12px; background:linear-gradient(90deg, #f59e0b, #f97316)"></div>
+  <div class="stat-card" style="animation-delay:0.05s">
+    <div class="card-title" id="title-outstanding">Outstanding Tasks</div>
+    <div class="stat-value" id="stat-outstanding">47</div>
+    <div class="stat-sub">Open &amp; in progress</div>
+    <span class="stat-badge" id="badge-outstanding">—</span>
+    <div class="accent-line" style="background: linear-gradient(90deg, #f59e0b, #f97316)"></div>
   </div>
 
-  <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; min-height:100px; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); animation-delay:0.1s">
-    <div class="card-title" id="title-overdue" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Overdue Tasks</div>
-    <div class="stat-value" id="stat-overdue" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:36px; font-weight:800; color:#dc2626; margin-top:4px'>12</div>
-    <div class="stat-sub" style="font-size:12px; color:#94a3b8; margin-top:6px">Past due date</div>
-    <span class="stat-badge" id="badge-overdue" style='display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; margin-top:8px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif'>—</span>
-    <div class="accent-line" style="position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 12px 12px; background:linear-gradient(90deg, #ef4444, #ec4899)"></div>
+  <div class="stat-card" style="animation-delay:0.1s">
+    <div class="card-title" id="title-overdue">Overdue Tasks</div>
+    <div class="stat-value" id="stat-overdue" style="color: #dc2626">12</div>
+    <div class="stat-sub">Past due date</div>
+    <span class="stat-badge" id="badge-overdue">—</span>
+    <div class="accent-line" style="background: linear-gradient(90deg, #ef4444, #ec4899)"></div>
   </div>
 
-  <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; min-height:100px; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); animation-delay:0.15s">
-    <div class="card-title" id="title-completed" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Completed Tasks</div>
-    <div class="stat-value" id="stat-completed" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:36px; font-weight:800; color:#059669; margin-top:4px'>134</div>
-    <div class="stat-sub" style="font-size:12px; color:#94a3b8; margin-top:6px">This period</div>
-    <span class="stat-badge up" style='display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; margin-top:8px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; background:rgba(16, 185, 129, 0.12); color:#059669'>↑ 12% vs last</span>
-    <div class="accent-line" style="position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 12px 12px; background:linear-gradient(90deg, #10b981, #06b6d4)"></div>
+  <div class="stat-card" style="animation-delay:0.15s">
+    <div class="card-title" id="title-completed">Completed Tasks</div>
+    <div class="stat-value" id="stat-completed" style="color: #059669">134</div>
+    <div class="stat-sub">This period</div>
+    <span class="stat-badge up">↑ 12% vs last</span>
+    <div class="accent-line" style="background: linear-gradient(90deg, #10b981, #06b6d4)"></div>
   </div>
 
-  <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; min-height:100px; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); animation-delay:0.18s">
-    <div class="card-title" id="title-interactions" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Interactions</div>
-    <div class="stat-value" id="stat-interactions" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:36px; font-weight:800; color:#1e293b; margin-top:4px'>218</div>
-    <div class="stat-sub" style="font-size:12px; color:#94a3b8; margin-top:6px">Total this period</div>
-    <span class="stat-badge up" style='display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; margin-top:8px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; background:rgba(16, 185, 129, 0.12); color:#059669'>↑ 7% vs prior</span>
-    <div class="accent-line" style="position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 12px 12px; background:linear-gradient(90deg, #0ea5e9, #6366f1)"></div>
+  <div class="stat-card" style="animation-delay:0.18s">
+    <div class="card-title" id="title-interactions">Interactions</div>
+    <div class="stat-value" id="stat-interactions">218</div>
+    <div class="stat-sub">Total this period</div>
+    <span class="stat-badge up">↑ 7% vs prior</span>
+    <div class="accent-line" style="background: linear-gradient(90deg, #0ea5e9, #6366f1)"></div>
   </div>
 
 </div>
 
 <!-- STAT ROW 2: Business metrics -->
-<div class="stat-row-2" style="padding:16px 32px 0; display:grid; grid-template-columns:repeat(3, 1fr); gap:16px">
+<div class="stat-row-2">
 
-  <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; min-height:100px; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); animation-delay:0.2s">
-    <div class="card-title" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Quotes Generated</div>
-    <div class="stat-value" id="stat-quotes" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:36px; font-weight:800; color:#1e293b; margin-top:4px'>89</div>
-    <div class="stat-sub" style="font-size:12px; color:#94a3b8; margin-top:6px">Total this period</div>
-    <span class="stat-badge up" style='display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; margin-top:8px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; background:rgba(16, 185, 129, 0.12); color:#059669'>↑ 5% vs last</span>
-    <div class="accent-line" style="position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 12px 12px; background:linear-gradient(90deg, #6366f1, #8b5cf6)"></div>
+  <div class="stat-card" style="animation-delay:0.2s">
+    <div class="card-title">Quotes Generated</div>
+    <div class="stat-value" id="stat-quotes">89</div>
+    <div class="stat-sub">Total this period</div>
+    <span class="stat-badge up">↑ 5% vs last</span>
+    <div class="accent-line" style="background: linear-gradient(90deg, #6366f1, #8b5cf6)"></div>
   </div>
 
-  <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; min-height:100px; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); animation-delay:0.25s">
-    <div class="card-title" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>New Accounts</div>
-    <div class="stat-value" id="stat-accounts" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:36px; font-weight:800; color:#1e293b; margin-top:4px'>23</div>
-    <div class="stat-sub" style="font-size:12px; color:#94a3b8; margin-top:6px">Opened this period</div>
-    <span class="stat-badge up" style='display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; margin-top:8px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; background:rgba(16, 185, 129, 0.12); color:#059669'>↑ 18% vs last</span>
-    <div class="accent-line" style="position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 12px 12px; background:linear-gradient(90deg, #3b82f6, #6366f1)"></div>
-    <span class="unfiltered-tag" id="tag-accounts" style='display:none; align-items:center; gap:4px; font-size:10px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; color:#94a3b8; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px; position:absolute; top:16px; right:16px'>
-      <svg viewbox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:10px; height:10px; flex-shrink:0" width="10" height="10"><circle cx="8" cy="8" r="6"></circle><line x1="8" y1="5" x2="8" y2="8"></line><line x1="8" y1="11" x2="8" y2="11"></line></svg>
+  <div class="stat-card" style="animation-delay:0.25s">
+    <div class="card-title">New Accounts</div>
+    <div class="stat-value" id="stat-accounts">23</div>
+    <div class="stat-sub">Opened this period</div>
+    <span class="stat-badge up">↑ 18% vs last</span>
+    <div class="accent-line" style="background: linear-gradient(90deg, #3b82f6, #6366f1)"></div>
+    <span class="unfiltered-tag" id="tag-accounts">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8" y2="11"/></svg>
       Not filtered by user
     </span>
   </div>
 
-  <div class="stat-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; min-height:100px; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); animation-delay:0.3s">
-    <div class="card-title" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Total Revenue</div>
-    <div class="stat-value" id="stat-revenue" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:26px; font-weight:800; color:#1e293b; margin-top:4px'>$2.4M</div>
-    <div class="stat-sub" style="font-size:12px; color:#94a3b8; margin-top:6px">Sales this period</div>
-    <span class="stat-badge up" style='display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; margin-top:8px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; background:rgba(16, 185, 129, 0.12); color:#059669'>↑ 9.2% vs last</span>
-    <div class="accent-line" style="position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 12px 12px; background:linear-gradient(90deg, #10b981, #3b82f6)"></div>
-    <span class="unfiltered-tag" id="tag-revenue" style='display:none; align-items:center; gap:4px; font-size:10px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; color:#94a3b8; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px; position:absolute; top:16px; right:16px'>
-      <svg viewbox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:10px; height:10px; flex-shrink:0" width="10" height="10"><circle cx="8" cy="8" r="6"></circle><line x1="8" y1="5" x2="8" y2="8"></line><line x1="8" y1="11" x2="8" y2="11"></line></svg>
+  <div class="stat-card" style="animation-delay:0.3s">
+    <div class="card-title">Total Revenue</div>
+    <div class="stat-value" id="stat-revenue" style="font-size:26px">$2.4M</div>
+    <div class="stat-sub">Sales this period</div>
+    <span class="stat-badge up">↑ 9.2% vs last</span>
+    <div class="accent-line" style="background: linear-gradient(90deg, #10b981, #3b82f6)"></div>
+    <span class="unfiltered-tag" id="tag-revenue">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8" y2="11"/></svg>
       Not filtered by user
     </span>
   </div>
@@ -224,67 +870,68 @@
 </div>
 
 <!-- DASHBOARD GRID (charts only) -->
-<div class="dashboard" style="padding:20px 32px 32px; display:grid; grid-template-columns:repeat(12, 1fr); grid-template-rows:auto; gap:16px">
+<div class="dashboard">
 
-  <div class="card chart-sales" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); grid-column:span 8; animation-delay:0.35s">
-    <div class="card-title" id="title-sales" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Sales Figures — By Month</div>
-    <div class="chart-container" style="position:relative; width:100%; height:240px">
+  <div class="card chart-sales" style="animation-delay:0.35s; position:relative;">
+    <div class="card-title" id="title-sales">Sales Figures — By Month</div>
+    <div class="chart-container" style="height:240px">
       <canvas id="salesChart"></canvas>
     </div>
-    <span class="unfiltered-tag" id="tag-sales" style='display:none; align-items:center; gap:4px; font-size:10px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; color:#94a3b8; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px; position:absolute; top:16px; right:16px'>
-      <svg viewbox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:10px; height:10px; flex-shrink:0" width="10" height="10"><circle cx="8" cy="8" r="6"></circle><line x1="8" y1="5" x2="8" y2="8"></line><line x1="8" y1="11" x2="8" y2="11"></line></svg>
+    <span class="unfiltered-tag" id="tag-sales">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8" y2="11"/></svg>
       Not filtered by user
     </span>
   </div>
 
   <!-- CHART: Pipeline Stacked Bar -->
-  <div class="card chart-pipeline" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); grid-column:span 4; animation-delay:0.4s">
-    <div class="card-title" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Open vs Weighted Pipeline</div>
-    <div class="chart-container" style="position:relative; width:100%; height:240px">
+  <div class="card chart-pipeline" style="animation-delay:0.4s; position:relative;">
+    <div class="card-title">Open vs Weighted Pipeline</div>
+    <div class="chart-container" style="height:240px">
       <canvas id="pipelineChart"></canvas>
     </div>
-    <span class="unfiltered-tag" id="tag-pipeline" style='display:none; align-items:center; gap:4px; font-size:10px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; color:#94a3b8; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px; position:absolute; top:16px; right:16px'>
-      <svg viewbox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:10px; height:10px; flex-shrink:0" width="10" height="10"><circle cx="8" cy="8" r="6"></circle><line x1="8" y1="5" x2="8" y2="8"></line><line x1="8" y1="11" x2="8" y2="11"></line></svg>
+    <span class="unfiltered-tag" id="tag-pipeline">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8" y2="11"/></svg>
       Not filtered by user
     </span>
   </div>
 
   <!-- TOP 5 CUSTOMERS -->
-  <div class="card chart-top5" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); grid-column:span 5; animation-delay:0.45s">
-    <div class="card-title" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Top 5 Customers by Revenue</div>
-    <table class="top5-table" style="width:100%; border-collapse:collapse; margin-top:4px" width="100%">
+  <div class="card chart-top5" style="animation-delay:0.45s; position:relative;">
+    <div class="card-title">Top 5 Customers by Revenue</div>
+    <table class="top5-table">
       <thead>
         <tr>
-          <th style='text-align:left; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px; color:#64748b; padding:0 0 10px; border-bottom:1px solid #e2e8f0' align="left">Customer</th>
-          <th style='text-align:right; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px; color:#64748b; padding:0 0 10px; border-bottom:1px solid #e2e8f0' align="right">Revenue</th>
+          <th>Customer</th>
+          <th>Revenue</th>
         </tr>
       </thead>
       <tbody id="top5-body"></tbody>
     </table>
-    <span class="unfiltered-tag" id="tag-top5" style='display:none; align-items:center; gap:4px; font-size:10px; font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-weight:600; color:#94a3b8; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; padding:2px 7px; position:absolute; top:16px; right:16px'>
-      <svg viewbox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:10px; height:10px; flex-shrink:0" width="10" height="10"><circle cx="8" cy="8" r="6"></circle><line x1="8" y1="5" x2="8" y2="8"></line><line x1="8" y1="11" x2="8" y2="11"></line></svg>
+    <span class="unfiltered-tag" id="tag-top5">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8" y2="11"/></svg>
       Not filtered by user
     </span>
   </div>
 
   <!-- CHART: Quotes Doughnut -->
-  <div class="card chart-quotes" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); grid-column:span 3; animation-delay:0.5s">
-    <div class="card-title" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>Quotes — Status Split</div>
-    <div class="chart-container" style="position:relative; width:100%; height:190px">
+  <div class="card chart-quotes" style="animation-delay:0.5s">
+    <div class="card-title">Quotes — Status Split</div>
+    <div class="chart-container" style="height:190px">
       <canvas id="quotesChart"></canvas>
     </div>
   </div>
 
   <!-- CHART: New Accounts Bar -->
-  <div class="card chart-accounts" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; overflow:hidden; animation:fadeIn 0.4s ease both; box-shadow:0 1px 4px rgba(0, 0, 0, 0.06); grid-column:span 4; animation-delay:0.55s">
-    <div class="card-title" style='font-family:"Calibri", "Calibri Light", "Gill Sans", "Trebuchet MS", sans-serif; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; margin-bottom:14px'>New Accounts — By Month</div>
-    <div class="chart-container" style="position:relative; width:100%; height:190px">
+  <div class="card chart-accounts" style="animation-delay:0.55s">
+    <div class="card-title">New Accounts — By Month</div>
+    <div class="chart-container" style="height:190px">
       <canvas id="accountsChart"></canvas>
     </div>
   </div>
 
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 // =============================================================
 //  PRESETS  — save/load/delete filter combinations
@@ -378,7 +1025,7 @@ function updateDeleteBtn() {
     const icon      = document.getElementById('default-star-icon');
     const label     = document.getElementById('default-btn-label');
     btn.classList.toggle('is-default', isDefault);
-    icon.setAttribute('fill', isDefault ? '#d97706' : 'none');
+    icon.setAttribute('fill', isDefault ? 'var(--accent4)' : 'none');
     label.textContent = isDefault ? 'Default Set' : 'Set as Default';
   }
 }
