@@ -542,11 +542,11 @@
   }
 
   /* CHART CARDS */
-  .chart-sales { grid-column: span 8; }
-  .chart-pipeline { grid-column: span 4; }
-  .chart-top5 { grid-column: span 5; }
-  .chart-quotes { grid-column: span 3; }
-  .chart-accounts { grid-column: span 4; }
+  .chart-sales { grid-column: span 6; }
+  .chart-pipeline { grid-column: span 6; }
+  .chart-top5 { grid-column: span 6; }
+  .chart-quotes { grid-column: span 6; }
+  .chart-accounts { grid-column: span 6; }
 
   .chart-container {
     position: relative;
@@ -635,8 +635,8 @@
     .stat-row-2 { grid-template-columns: repeat(2, 1fr); }
     .chart-sales { grid-column: span 12; }
     .chart-pipeline { grid-column: span 12; }
-    .chart-top5 { grid-column: span 6; }
-    .chart-quotes { grid-column: span 6; }
+    .chart-top5 { grid-column: span 12; }
+    .chart-quotes { grid-column: span 12; }
     .chart-accounts { grid-column: span 12; }
   }
 
@@ -644,8 +644,6 @@
     .header, .filters-wrap, .stat-row-1, .stat-row-2, .dashboard { padding-left: 16px; padding-right: 16px; }
     .stat-row-1 { grid-template-columns: repeat(2, 1fr); }
     .stat-row-2 { grid-template-columns: repeat(1, 1fr); }
-    .chart-top5 { grid-column: span 12; }
-    .chart-quotes { grid-column: span 12; }
   }
 
   #pipelineChart { cursor: pointer; }
@@ -852,15 +850,11 @@
   </div>
 
   <div class="stat-card" style="animation-delay:0.25s">
-    <div class="card-title">New Accounts</div>
-    <div class="stat-value" id="stat-accounts">23</div>
-    <div class="stat-sub">Opened this period</div>
-    <span class="stat-badge up">↑ 18% vs last</span>
-    <div class="accent-line" style="background: linear-gradient(90deg, #3b82f6, #6366f1)"></div>
-    <span class="unfiltered-tag" id="tag-accounts">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8" y2="11"/></svg>
-      Not filtered by user
-    </span>
+    <div class="card-title">Quote Conversion Rate</div>
+    <div class="stat-value" id="stat-conversion-top">34%</div>
+    <div class="stat-sub" id="stat-conversion-top-sub">18 won of 53 closed</div>
+    <span class="stat-badge up" id="badge-conversion-top">↑ 4% vs prior period</span>
+    <div class="accent-line" style="background: linear-gradient(90deg, #059669, #10b981)"></div>
   </div>
 
   <div class="stat-card" style="animation-delay:0.3s">
@@ -895,7 +889,7 @@
   <div class="card chart-pipeline" style="animation-delay:0.4s; position:relative;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
       <div>
-        <div class="card-title" style="margin-bottom:0" id="pipeline-chart-title">Open vs Weighted Pipeline</div>
+        <div class="card-title" style="margin-bottom:0" id="pipeline-chart-title">Open vs Weighted Pipeline — By Close Date</div>
         <div id="pipeline-breadcrumb" style="display:none; font-size:11px; color:#64748b; margin-top:3px;">
           <span style="cursor:pointer; color:#2563eb; text-decoration:underline;" onclick="pipelineDrillBack()">← All Categories</span>
           <span id="pipeline-breadcrumb-label"></span>
@@ -930,17 +924,9 @@
     </span>
   </div>
 
-  <!-- CHART: Quotes Doughnut -->
-  <div class="card chart-quotes" style="animation-delay:0.5s">
-    <div class="card-title">Quotes — Status Split</div>
-    <div class="chart-container" style="height:190px">
-      <canvas id="quotesChart"></canvas>
-    </div>
-  </div>
-
-  <!-- CHART: New Accounts Bar -->
+  <!-- CHART: New Accounts vs New Customers Bar -->
   <div class="card chart-accounts" style="animation-delay:0.55s">
-    <div class="card-title">New Accounts — By Month</div>
+    <div class="card-title">New Accounts vs New Customers — By Month</div>
     <div class="chart-container" style="height:190px">
       <canvas id="accountsChart"></canvas>
     </div>
@@ -1169,8 +1155,11 @@ function buildMonthlyData() {
       completedTasks:   Math.round(20  + seededRnd(seed+200)  * 80),
       interactions:     Math.round(30  + seededRnd(seed+220)  * 150),
       quotes:           Math.round(10  + seededRnd(seed+250)  * 50),
+      quotesWon:        Math.round(3   + seededRnd(seed+260)  * 15),
+      quotesLost:       Math.round(2   + seededRnd(seed+265)  * 20),
       quotedValue:      Math.round(80  + seededRnd(seed+275)  * 400),
       newAccounts:      Math.round(2   + seededRnd(seed+300)  * 15),
+      newCustomers:     Math.round(1   + seededRnd(seed+320)  * 8),
     };
   }
   return data;
@@ -1319,6 +1308,71 @@ function weeklyData(start, end, field) {
 // Sum a sliced data array
 function sumData(start, end, field) {
   return sliceData(start, end, field).reduce((a, b) => a + b, 0);
+}
+
+// Daily breakdown — two modes:
+// - 'sparse': for low-count integer metrics (accounts, customers) — assigns whole units to random days
+// - 'continuous': for revenue/target — distributes proportionally across days
+function dailyData(start, end, field, mode) {
+  mode = mode || (field === 'newAccounts' || field === 'newCustomers' ? 'sparse' : 'continuous');
+
+  const days = [];
+  const cur  = new Date(start);
+  while (cur <= end) { days.push(new Date(cur)); cur.setDate(cur.getDate() + 1); }
+
+  const result = new Array(days.length).fill(0);
+
+  if (mode === 'sparse') {
+    // Get monthly total and scatter whole units across days in the range
+    const monthTotals = {};
+    days.forEach(d => {
+      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}`;
+      if (!monthTotals[key]) {
+        monthTotals[key] = MONTHLY_DATA[key] ? MONTHLY_DATA[key][field] : 0;
+      }
+    });
+    // For each month's total, assign each unit to a random day in that month within our range
+    Object.entries(monthTotals).forEach(([key, total]) => {
+      const [y, m] = key.split('-').map(Number);
+      const monthDayIndices = days
+        .map((d, i) => d.getFullYear() === y && d.getMonth() === m ? i : -1)
+        .filter(i => i !== -1);
+      if (!monthDayIndices.length) return;
+      for (let u = 0; u < total; u++) {
+        const seed  = parseInt(key.replace('-','')) * 100 + u + field.length;
+        const pick  = monthDayIndices[Math.floor(seededRnd(seed) * monthDayIndices.length)];
+        result[pick]++;
+      }
+    });
+
+  } else {
+    // Continuous: distribute proportionally with mild daily variance
+    days.forEach((d, i) => {
+      const y = d.getFullYear(), m = d.getMonth();
+      const key          = `${y}-${String(m).padStart(2,'0')}`;
+      const monthly      = MONTHLY_DATA[key] ? MONTHLY_DATA[key][field] : 0;
+      const daysInMonth  = new Date(y, m + 1, 0).getDate();
+      const seed         = y * 10000 + m * 100 + d.getDate();
+      const avg          = monthly / daysInMonth;
+      result[i] = Math.max(0, Math.round(avg * (0.6 + seededRnd(seed) * 0.8)));
+    });
+  }
+
+  return result;
+}
+
+function dailyLabels(start, end) {
+  const result = [];
+  const cur = new Date(start);
+  const multiYear = start.getFullYear() !== end.getFullYear();
+  while (cur <= end) {
+    const d = cur.getDate();
+    const m = MONTH_NAMES[cur.getMonth()];
+    const y = String(cur.getFullYear()).slice(2);
+    result.push(multiYear ? `${d} ${m} '${y}` : `${d} ${m}`);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return result;
 }
 
 // Prior period comparison (equal length window immediately before)
@@ -1471,54 +1525,36 @@ function pipelineDrillBack() {
   };
   pipelineChart.update('active');
 
-  document.getElementById('pipeline-chart-title').textContent = 'Open vs Weighted Pipeline';
+  document.getElementById('pipeline-chart-title').textContent = 'Open vs Weighted Pipeline — By Close Date';
   document.getElementById('pipeline-breadcrumb').style.display = 'none';
   document.getElementById('pipeline-drill-hint').style.display = 'block';
 }
 
 // =============================================================
-//  QUOTES DOUGHNUT
-// =============================================================
-
-const quotesCtx  = document.getElementById('quotesChart').getContext('2d');
-const quotesChart = new Chart(quotesCtx, {
-  type: 'doughnut',
-  data: { labels:['Accepted','Pending','Declined','Expired'], datasets:[{
-    data:[38,27,14,10],
-    backgroundColor:['#059669','#2563eb','#dc2626','#94a3b8'],
-    borderColor:'#ffffff', borderWidth:3, hoverOffset:4
-  }]},
-  options: {
-    responsive:true, maintainAspectRatio:false, cutout:'68%',
-    plugins: {
-      legend: { position:'bottom', labels:{ boxWidth:10, padding:12, font:{size:10} } },
-      tooltip: { backgroundColor:'#1e293b', borderColor:'#334155', borderWidth:1 }
-    }
-  }
-});
-
-// =============================================================
-//  NEW ACCOUNTS BAR
+//  NEW ACCOUNTS vs NEW CUSTOMERS BAR
 // =============================================================
 
 const accCtx       = document.getElementById('accountsChart').getContext('2d');
 const accountsChart = new Chart(accCtx, {
   type: 'bar',
-  data: { labels:[], datasets:[{
-    label:'New Accounts',
-    data:[],
-    backgroundColor: (() => {
-      const g = accCtx.createLinearGradient(0,0,0,180);
-      g.addColorStop(0,'rgba(79,70,229,0.75)');
-      g.addColorStop(1,'rgba(37,99,235,0.35)');
-      return g;
-    })(),
-    borderRadius:5, borderSkipped:false
-  }]},
+  data: { labels:[], datasets:[
+    {
+      label:'New Accounts',
+      data:[],
+      backgroundColor: 'rgba(79,70,229,0.7)',
+      borderRadius:4, borderSkipped:false
+    },
+    {
+      label:'New Customers',
+      data:[],
+      backgroundColor: 'rgba(5,150,105,0.7)',
+      borderRadius:4, borderSkipped:false
+    }
+  ]},
   options: {
     responsive:true, maintainAspectRatio:false,
     plugins: {
-      legend:{ display:false },
+      legend:{ position:'top', align:'end', labels:{ boxWidth:10, padding:12, font:{size:10} } },
       tooltip:{ backgroundColor:'#1e293b', borderColor:'#334155', borderWidth:1 }
     },
     scales: {
@@ -1567,33 +1603,28 @@ function renderTop5(rangeLabel) {
 function renderDashboard() {
   const { start, end, label } = getDateRange();
   const prior                 = getPriorRange(start, end);
-  const months                = getMonthsInRange(start, end);
-  const isSingleMonth         = months.length === 1;
+  const months = getMonthsInRange(start, end);
 
   // --- Update page subtitle with active range ---
   document.querySelector('.header-title p').textContent =
     `Sales performance & pipeline metrics — ${label}`;
 
-  // --- Sales line chart ---
-  const salesLabels  = sliceLabels(start, end);
-  const revenueData  = isSingleMonth
-    ? weeklyData(start, end, 'revenue')
-    : sliceData(start, end, 'revenue');
-  const targetData   = isSingleMonth
-    ? weeklyData(start, end, 'target')
-    : sliceData(start, end, 'target');
+  const rangeDays = Math.round((end - start) / 86400000) + 1;
+  const useDaily  = rangeDays <= 31;
 
-  salesChart.data.labels                = salesLabels;
-  salesChart.data.datasets[0].data      = revenueData;
-  salesChart.data.datasets[1].data      = targetData;
-  // Adjust point radius: too many points = hide them
-  const showPoints = salesLabels.length <= 13;
-  salesChart.data.datasets[0].pointRadius = showPoints ? 4 : 2;
+  // --- Sales line chart ---
+  const salesLabels = useDaily ? dailyLabels(start, end) : sliceLabels(start, end);
+  const revenueData = useDaily ? dailyData(start, end, 'revenue') : sliceData(start, end, 'revenue');
+  const targetData  = useDaily ? dailyData(start, end, 'target')  : sliceData(start, end, 'target');
+
+  salesChart.data.labels                   = salesLabels;
+  salesChart.data.datasets[0].data         = revenueData;
+  salesChart.data.datasets[1].data         = targetData;
+  salesChart.data.datasets[0].pointRadius  = useDaily ? 2 : (salesLabels.length <= 13 ? 4 : 2);
   salesChart.update();
 
-  // --- Pipeline chart — only update if at top level (don't reset a drill-down) ---
-  const rangeDays = Math.round((end - start) / 86400000) + 1;
-  const scale     = Math.min(1, rangeDays / 90);
+  // --- Pipeline chart — only update if at top level ---
+  const scale = Math.min(1, rangeDays / 90);
   if (pipelineDrillCategory === null) {
     pipelineChart.data.labels           = PIPELINE_CATEGORIES;
     pipelineChart.data.datasets[0].data = PIPELINE_BASE_O.map(v => Math.round(v * scale));
@@ -1601,23 +1632,29 @@ function renderDashboard() {
     pipelineChart.update();
   }
 
-  // --- Accounts chart ---
-  const acctLabels = sliceLabels(start, end);
-  const acctData   = isSingleMonth
-    ? weeklyData(start, end, 'newAccounts')
-    : sliceData(start, end, 'newAccounts');
+  // --- Accounts vs Customers chart ---
+  const acctLabels = useDaily ? dailyLabels(start, end) : sliceLabels(start, end);
+  const acctData   = useDaily ? dailyData(start, end, 'newAccounts')  : sliceData(start, end, 'newAccounts');
+  const custData   = useDaily ? dailyData(start, end, 'newCustomers') : sliceData(start, end, 'newCustomers');
   accountsChart.data.labels           = acctLabels;
   accountsChart.data.datasets[0].data = acctData;
+  accountsChart.data.datasets[1].data = custData;
   accountsChart.update();
 
-  // --- Quotes doughnut — total quotes drives the split ---
-  const totalQuotes = sumData(start, end, 'quotes');
-  const qAccepted   = Math.round(totalQuotes * 0.43);
-  const qPending    = Math.round(totalQuotes * 0.30);
-  const qDeclined   = Math.round(totalQuotes * 0.16);
-  const qExpired    = totalQuotes - qAccepted - qPending - qDeclined;
-  quotesChart.data.datasets[0].data = [qAccepted, qPending, qDeclined, qExpired];
-  quotesChart.update();
+  // --- Quote conversion rate ---
+  const curWon    = sumData(start, end, 'quotesWon');
+  const curLost   = sumData(start, end, 'quotesLost');
+  const curClosed = curWon + curLost;
+  const curConv   = curClosed > 0 ? Math.round((curWon / curClosed) * 100) : 0;
+
+  const priorWon    = sumData(prior.start, prior.end, 'quotesWon');
+  const priorLost   = sumData(prior.start, prior.end, 'quotesLost');
+  const priorClosed = priorWon + priorLost;
+  const priorConv   = priorClosed > 0 ? Math.round((priorWon / priorClosed) * 100) : 0;
+
+  document.getElementById('stat-conversion-top').textContent     = `${curConv}%`;
+  document.getElementById('stat-conversion-top-sub').textContent = `${curWon} won of ${curClosed} closed`;
+  setStatBadge('stat-conversion-top', pctChange(curConv, priorConv), false, 'badge-conversion-top');
 
   // --- Stat cards with prior-period comparisons ---
   const curRevenue   = sumData(start, end, 'revenue');
@@ -1645,11 +1682,6 @@ function renderDashboard() {
   setStatBadge('stat-quotes', pctChange(curQuotes, priorQuotes), false);
   document.getElementById('stat-quoted-value').textContent = formatRevenue(curQuotedVal);
   setStatBadge('stat-quoted-value', pctChange(curQuotedVal, priorQuotedVal), false);
-
-  const curAccounts   = sumData(start, end, 'newAccounts');
-  const priorAccounts = sumData(prior.start, prior.end, 'newAccounts');
-  animateCount('stat-accounts', curAccounts);
-  setStatBadge('stat-accounts', pctChange(curAccounts, priorAccounts), false);
 
   // Overdue & outstanding — snapshot with seeded prior-period comparison
   const seed           = TODAY.getFullYear() * 100 + TODAY.getMonth();
@@ -1725,7 +1757,7 @@ function onUserFilterChange() {
   document.getElementById('title-interactions').textContent = `Interactions${suffix}`;
 
   // Show "Not filtered by user" tag on non-user-filterable cards
-  const tagIds = ['tag-accounts','tag-revenue','tag-sales','tag-pipeline','tag-top5'];
+  const tagIds = ['tag-revenue','tag-sales','tag-pipeline','tag-top5'];
   tagIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('visible', hasUser);
