@@ -485,7 +485,7 @@
   .stat-row-2 {
     padding: 16px 32px 0;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
   }
 
@@ -632,7 +632,7 @@
   /* RESPONSIVE */
   @media (max-width: 1100px) {
     .stat-row-1 { grid-template-columns: repeat(2, 1fr); }
-    .stat-row-2 { grid-template-columns: repeat(3, 1fr); }
+    .stat-row-2 { grid-template-columns: repeat(2, 1fr); }
     .chart-sales { grid-column: span 12; }
     .chart-pipeline { grid-column: span 12; }
     .chart-top5 { grid-column: span 6; }
@@ -841,6 +841,14 @@
     <div class="stat-sub">Total this period</div>
     <span class="stat-badge up">↑ 5% vs last</span>
     <div class="accent-line" style="background: linear-gradient(90deg, #6366f1, #8b5cf6)"></div>
+  </div>
+
+  <div class="stat-card" style="animation-delay:0.23s">
+    <div class="card-title">Quoted Value</div>
+    <div class="stat-value" id="stat-quoted-value" style="font-size:26px">$1.2M</div>
+    <div class="stat-sub">Total this period</div>
+    <span class="stat-badge up">↑ 8% vs prior period</span>
+    <div class="accent-line" style="background: linear-gradient(90deg, #8b5cf6, #a855f7)"></div>
   </div>
 
   <div class="stat-card" style="animation-delay:0.25s">
@@ -1152,6 +1160,7 @@ function buildMonthlyData() {
       completedTasks:   Math.round(20  + seededRnd(seed+200)  * 80),
       interactions:     Math.round(30  + seededRnd(seed+220)  * 150),
       quotes:           Math.round(10  + seededRnd(seed+250)  * 50),
+      quotedValue:      Math.round(80  + seededRnd(seed+275)  * 400),
       newAccounts:      Math.round(2   + seededRnd(seed+300)  * 15),
     };
   }
@@ -1213,6 +1222,10 @@ function getDateRange() {
   }
 
   return { start, end, label };
+}
+
+function formatRevenue(val) {
+  return val >= 1000 ? `$${(val / 1000).toFixed(1)}M` : `$${val}k`;
 }
 
 function formatDate(d) {
@@ -1542,8 +1555,7 @@ function renderDashboard() {
   const curRevenue   = sumData(start, end, 'revenue');
   const priorRevenue = sumData(prior.start, prior.end, 'revenue');
   const revPct       = pctChange(curRevenue, priorRevenue);
-  document.getElementById('stat-revenue').textContent =
-    curRevenue >= 1000 ? `$${(curRevenue/1000).toFixed(1)}M` : `$${curRevenue}k`;
+  document.getElementById('stat-revenue').textContent = formatRevenue(curRevenue);
   document.getElementById('stat-revenue').nextElementSibling.textContent = 'Sales this period';
   setStatBadge('stat-revenue', revPct, false);
 
@@ -1557,10 +1569,14 @@ function renderDashboard() {
   animateCount('stat-interactions', curInteractions);
   setStatBadge('stat-interactions', pctChange(curInteractions, priorInteractions), false);
 
-  const curQuotes   = sumData(start, end, 'quotes');
-  const priorQuotes = sumData(prior.start, prior.end, 'quotes');
+  const curQuotes      = sumData(start, end, 'quotes');
+  const priorQuotes    = sumData(prior.start, prior.end, 'quotes');
+  const curQuotedVal   = sumData(start, end, 'quotedValue');
+  const priorQuotedVal = sumData(prior.start, prior.end, 'quotedValue');
   animateCount('stat-quotes', curQuotes);
   setStatBadge('stat-quotes', pctChange(curQuotes, priorQuotes), false);
+  document.getElementById('stat-quoted-value').textContent = formatRevenue(curQuotedVal);
+  setStatBadge('stat-quoted-value', pctChange(curQuotedVal, priorQuotedVal), false);
 
   const curAccounts   = sumData(start, end, 'newAccounts');
   const priorAccounts = sumData(prior.start, prior.end, 'newAccounts');
