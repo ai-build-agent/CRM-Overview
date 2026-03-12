@@ -648,7 +648,7 @@
     .chart-quotes { grid-column: span 12; }
   }
 
-  /* Custom scrollbar */
+  #pipelineChart { cursor: pointer; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -893,8 +893,17 @@
 
   <!-- CHART: Pipeline Stacked Bar -->
   <div class="card chart-pipeline" style="animation-delay:0.4s; position:relative;">
-    <div class="card-title">Open vs Weighted Pipeline</div>
-    <div class="chart-container" style="height:240px">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <div>
+        <div class="card-title" style="margin-bottom:0" id="pipeline-chart-title">Open vs Weighted Pipeline</div>
+        <div id="pipeline-breadcrumb" style="display:none; font-size:11px; color:#64748b; margin-top:3px;">
+          <span style="cursor:pointer; color:#2563eb; text-decoration:underline;" onclick="pipelineDrillBack()">← All Categories</span>
+          <span id="pipeline-breadcrumb-label"></span>
+        </div>
+      </div>
+      <div id="pipeline-drill-hint" style="font-size:10px; color:#94a3b8; font-style:italic;">Click a bar to drill down</div>
+    </div>
+    <div class="chart-container" style="height:210px">
       <canvas id="pipelineChart"></canvas>
     </div>
     <span class="unfiltered-tag" id="tag-pipeline">
@@ -1181,9 +1190,18 @@ const TOP5_BASE = [
   { name: 'Vertex Capital',      revenue: 176000 },
 ];
 
-const PIPELINE_TYPES  = ['New Biz','Renewal','Upsell','Partner','Inbound'];
-const PIPELINE_BASE_O = [320, 210, 150, 90, 180];
-const PIPELINE_BASE_W = [190, 130,  95, 55, 120];
+const PIPELINE_CATEGORIES = ['New Biz', 'Renewal', 'Upsell', 'Partner', 'Inbound'];
+const PIPELINE_BASE_O     = [320, 210, 150, 90, 180];
+const PIPELINE_BASE_W     = [190, 130,  95, 55, 120];
+
+// Stage-level mock data per category for drill-down
+const PIPELINE_STAGES = {
+  'New Biz':  { stages: ['Prospecting','Qualifying','Tendering','Proposal','Review'], open: [80,70,60,70,40],  weighted: [20,35,42,56,37]  },
+  'Renewal':  { stages: ['Identified','In Discussion','Tendering','Negotiation','Review'], open: [60,50,40,40,20],  weighted: [15,25,28,32,30]  },
+  'Upsell':   { stages: ['Identified','Demoed','Proposal','Negotiation'], open: [50,40,35,25],  weighted: [12,20,25,38]  },
+  'Partner':  { stages: ['Prospecting','Qualifying','Proposal','Review'], open: [30,25,20,15],  weighted: [8,12,14,21]   },
+  'Inbound':  { stages: ['New','Qualifying','Demoed','Proposal','Closing'], open: [50,45,35,30,20],  weighted: [10,22,25,24,29]  },
+};
 
 // =============================================================
 //  DATE RANGE RESOLUTION
@@ -1387,29 +1405,76 @@ const salesChart = new Chart(salesCtx, {
 });
 
 // =============================================================
-//  PIPELINE STACKED BAR
+//  PIPELINE STACKED BAR — with category → stage drill-down
 // =============================================================
+
+let pipelineDrillCategory = null; // null = top level, string = drilled into category
 
 const pipeCtx      = document.getElementById('pipelineChart').getContext('2d');
 const pipelineChart = new Chart(pipeCtx, {
   type: 'bar',
-  data: { labels: PIPELINE_TYPES, datasets: [
+  data: { labels: PIPELINE_CATEGORIES, datasets: [
     { label:'Open Pipeline',     data:[...PIPELINE_BASE_O], backgroundColor:'rgba(37,99,235,0.7)',  borderRadius:4, borderSkipped:false },
-    { label:'Weighted Pipeline', data:[...PIPELINE_BASE_W], backgroundColor:'rgba(79,70,229,0.7)',  borderRadius:4, borderSkipped:false }
+    { label:'Weighted Pipeline', data:[...PIPELINE_BASE_W], backgroundColor:'rgba(79,70,229,0.55)', borderRadius:4, borderSkipped:false }
   ]},
   options: {
     responsive: true, maintainAspectRatio: false,
+    onClick: (evt, elements) => {
+      if (pipelineDrillCategory !== null) return; // already drilled, ignore clicks
+      if (!elements.length) return;
+      const idx = elements[0].index;
+      pipelineDrillInto(PIPELINE_CATEGORIES[idx]);
+    },
     plugins: {
       legend: { position:'top', align:'end', labels:{ boxWidth:10, padding:12, font:{size:10} } },
-      tooltip: { backgroundColor:'#1e293b', borderColor:'#334155', borderWidth:1,
-        callbacks:{ label: ctx => ` $${ctx.raw}k` } }
+      tooltip: {
+        backgroundColor:'#1e293b', borderColor:'#334155', borderWidth:1,
+        callbacks:{
+          label: ctx => ` $${ctx.raw}k`,
+          footer: items => pipelineDrillCategory === null ? ['Click to see stages →'] : []
+        }
+      }
     },
     scales: {
-      x: { stacked:true, grid:{ display:false }, ticks:{ font:{size:10} } },
-      y: { stacked:true, grid:{ color:'#e2e8f0' }, ticks:{ font:{size:10}, callback: v=>`$${v}k` } }
+      x: { stacked:false, grid:{ display:false }, ticks:{ font:{size:10} } },
+      y: { stacked:false, grid:{ color:'#e2e8f0' }, ticks:{ font:{size:10}, callback: v=>`$${v}k` } }
     }
   }
 });
+
+function pipelineDrillInto(category) {
+  pipelineDrillCategory = category;
+  const d = PIPELINE_STAGES[category];
+
+  pipelineChart.data.labels                = d.stages;
+  pipelineChart.data.datasets[0].data      = [...d.open];
+  pipelineChart.data.datasets[1].data      = [...d.weighted];
+  pipelineChart.options.onClick = (evt, elements) => {}; // disable further drill
+  pipelineChart.update('active');
+
+  document.getElementById('pipeline-chart-title').textContent = `${category} — By Stage`;
+  document.getElementById('pipeline-breadcrumb').style.display = 'block';
+  document.getElementById('pipeline-breadcrumb-label').textContent = ` › ${category}`;
+  document.getElementById('pipeline-drill-hint').style.display = 'none';
+}
+
+function pipelineDrillBack() {
+  pipelineDrillCategory = null;
+  const scale = 1;
+
+  pipelineChart.data.labels                = PIPELINE_CATEGORIES;
+  pipelineChart.data.datasets[0].data      = PIPELINE_BASE_O.map(v => Math.round(v * scale));
+  pipelineChart.data.datasets[1].data      = PIPELINE_BASE_W.map(v => Math.round(v * scale));
+  pipelineChart.options.onClick = (evt, elements) => {
+    if (!elements.length) return;
+    pipelineDrillInto(PIPELINE_CATEGORIES[elements[0].index]);
+  };
+  pipelineChart.update('active');
+
+  document.getElementById('pipeline-chart-title').textContent = 'Open vs Weighted Pipeline';
+  document.getElementById('pipeline-breadcrumb').style.display = 'none';
+  document.getElementById('pipeline-drill-hint').style.display = 'block';
+}
 
 // =============================================================
 //  QUOTES DOUGHNUT
@@ -1526,12 +1591,15 @@ function renderDashboard() {
   salesChart.data.datasets[0].pointRadius = showPoints ? 4 : 2;
   salesChart.update();
 
-  // --- Pipeline chart — scale by range length ---
+  // --- Pipeline chart — only update if at top level (don't reset a drill-down) ---
   const rangeDays = Math.round((end - start) / 86400000) + 1;
-  const scale     = Math.min(1, rangeDays / 90); // baseline = quarter
-  pipelineChart.data.datasets[0].data = PIPELINE_BASE_O.map(v => Math.round(v * scale));
-  pipelineChart.data.datasets[1].data = PIPELINE_BASE_W.map(v => Math.round(v * scale));
-  pipelineChart.update();
+  const scale     = Math.min(1, rangeDays / 90);
+  if (pipelineDrillCategory === null) {
+    pipelineChart.data.labels           = PIPELINE_CATEGORIES;
+    pipelineChart.data.datasets[0].data = PIPELINE_BASE_O.map(v => Math.round(v * scale));
+    pipelineChart.data.datasets[1].data = PIPELINE_BASE_W.map(v => Math.round(v * scale));
+    pipelineChart.update();
+  }
 
   // --- Accounts chart ---
   const acctLabels = sliceLabels(start, end);
